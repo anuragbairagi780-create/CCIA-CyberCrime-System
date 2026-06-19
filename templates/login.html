@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CCIA — Officer Login | UP Police Cyber Cell</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Inter:wght@400;500;600;700&display=swap');
+        [data-theme="light"]{--bg:#1a0a2e;--bg3:#ffffff;--border:#c0cce0;--border2:#a8b8d0;--text:#0d1b2a;--text2:#3a4a5c;--text3:#7a8a9a;--blue:#00308f;--gold:#c8a000;--red:#b22222;}
+        [data-theme="dark"]{--bg:#08020f;--bg3:#141c2e;--border:#1e2d45;--border2:#2a3f5f;--text:#e8eaf0;--text2:#8892a4;--text3:#4a5568;--blue:#4a90e2;--gold:#f0c040;--red:#ff4444;}
+        *{margin:0;padding:0;box-sizing:border-box;}
+        body{
+            font-family:'Inter',sans-serif;
+            background:var(--bg);
+            color:var(--text);
+            min-height:100vh;
+            display:flex;flex-direction:column;align-items:center;justify-content:center;
+            background-image:
+                radial-gradient(ellipse at 20% 50%, rgba(139,0,139,0.3) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 50%, rgba(0,48,143,0.4) 0%, transparent 50%),
+                radial-gradient(ellipse at 50% 0%, rgba(200,160,0,0.15) 0%, transparent 40%);
+        }
+        .tricolor{position:fixed;top:0;left:0;right:0;display:flex;height:5px;z-index:100;}
+        .t-s{flex:1;background:#ff9933;}.t-w{flex:1;background:#f0f0f0;}.t-g{flex:1;background:#138808;}
+        .login-wrap{width:100%;max-width:440px;padding:20px;}
+        .login-header{background:linear-gradient(135deg,#00308f,#001a6e);border-radius:12px 12px 0 0;padding:24px 20px 20px;text-align:center;border-top:4px solid var(--gold);}
+        .header-logos{display:flex;align-items:center;justify-content:center;gap:16px;margin-bottom:14px;}
+        .up-logo-img{width:70px;height:70px;border-radius:50%;border:3px solid var(--gold);object-fit:cover;background:#fff;padding:2px;box-shadow:0 0 20px rgba(200,160,0,0.4);}
+        .logo-divider{width:1px;height:54px;background:rgba(200,160,0,0.4);}
+        .ccia-badge{display:flex;flex-direction:column;align-items:flex-start;}
+        .ccia-title{font-family:'Share Tech Mono',monospace;font-size:24px;color:var(--gold);letter-spacing:3px;font-weight:700;line-height:1;}
+        .ccia-sub{font-size:10px;color:rgba(255,255,255,0.7);text-transform:uppercase;letter-spacing:1.5px;margin-top:4px;}
+        .dept-name{font-size:13px;color:#fff;font-weight:600;letter-spacing:0.5px;}
+        .dept-sub{font-size:10px;color:rgba(255,255,255,0.6);margin-top:3px;}
+        .login-card{background:var(--bg3);border:1px solid var(--border);border-top:none;border-radius:0 0 12px 12px;padding:28px 28px 24px;box-shadow:0 12px 40px rgba(0,0,0,0.4);}
+        .login-subtitle{font-size:11px;color:var(--text3);text-align:center;margin-bottom:20px;padding-bottom:14px;border-bottom:1px solid var(--border);letter-spacing:0.5px;}
+        .field{margin-bottom:14px;}
+        label{font-size:11px;color:var(--text2);font-weight:700;margin-bottom:6px;display:block;text-transform:uppercase;letter-spacing:0.8px;}
+        input{width:100%;background:#f4f6fa;border:1px solid var(--border2);border-radius:6px;color:var(--text);font-size:14px;padding:11px 14px;outline:none;transition:border-color .2s;font-family:'Inter',sans-serif;}
+        input:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(0,48,143,0.1);}
+        input::placeholder{color:var(--text3);}
+        .btn-login{width:100%;padding:13px;background:linear-gradient(135deg,#00308f,#001a6e);color:#fff;border:none;border-radius:6px;font-size:14px;font-weight:700;cursor:pointer;margin-top:6px;transition:all .2s;font-family:'Inter',sans-serif;letter-spacing:0.5px;border-bottom:3px solid var(--gold);}
+        .btn-login:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(0,48,143,0.5);}
+        .error{background:rgba(178,34,34,.08);border:1px solid rgba(178,34,34,.3);border-radius:6px;padding:10px 14px;color:var(--red);font-size:13px;margin-bottom:14px;display:flex;align-items:center;gap:8px;}
+        .divider{border:none;border-top:1px solid var(--border);margin:18px 0;}
+        .demo-creds{background:#f8f9fc;border:1px solid var(--border);border-radius:6px;padding:12px 14px;font-size:12px;color:var(--text2);}
+        .demo-title{font-weight:700;color:var(--text3);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.5px;font-size:10px;}
+        .demo-row{display:flex;justify-content:space-between;margin-top:5px;font-family:'Share Tech Mono',monospace;font-size:11px;}
+        .demo-label{color:var(--text3)}.demo-val{color:var(--blue);font-weight:600;}
+        .footer-note{text-align:center;margin-top:14px;font-size:10px;color:rgba(255,255,255,0.4);letter-spacing:0.3px;line-height:1.6;}
+        .theme-btn{position:fixed;top:14px;right:14px;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);border-radius:6px;padding:6px 10px;cursor:pointer;color:#fff;font-size:13px;}
+    </style>
+</head>
+<body>
+<div class="tricolor"><div class="t-s"></div><div class="t-w"></div><div class="t-g"></div></div>
+<button class="theme-btn" onclick="toggleTheme()">🌗</button>
+
+<div class="login-wrap">
+    <div class="login-header">
+        <div class="header-logos">
+            <img src="data:image/jpeg;base64,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" alt="UP Police Logo" class="up-logo-img">
+            <div class="logo-divider"></div>
+            <div class="ccia-badge">
+                <div class="ccia-title">CCIA</div>
+                <div class="ccia-sub">Cyber Intelligence</div>
+            </div>
+        </div>
+        <div class="dept-name">उत्तर प्रदेश पुलिस · Cyber Crime Cell</div>
+        <div class="dept-sub">Cyber Complaint Intelligence Assistant</div>
+    </div>
+
+    <div class="login-card">
+        <div class="login-subtitle">⚙ AUTHORIZED PERSONNEL ONLY — RESTRICTED ACCESS ⚙</div>
+
+        {% if error %}
+        <div class="error">⚠️ {{ error }}</div>
+        {% endif %}
+
+        <form method="POST">
+            <div class="field">
+                <label>Officer Username</label>
+                <input type="text" name="username" placeholder="Enter your username" required autocomplete="off">
+            </div>
+            <div class="field">
+                <label>Password</label>
+                <input type="password" name="password" placeholder="Enter your password" required>
+            </div>
+            <button type="submit" class="btn-login">🔐 LOGIN TO CCIA PORTAL</button>
+        </form>
+
+        <hr class="divider">
+
+        <div class="demo-creds">
+            <div class="demo-title">Demo Credentials</div>
+            <div class="demo-row"><span class="demo-label">Admin:</span><span class="demo-val">admin / admin123</span></div>
+            <div class="demo-row"><span class="demo-label">Officer:</span><span class="demo-val">officer / officer123</span></div>
+        </div>
+    </div>
+
+    <div class="footer-note">
+        🔒 Authorized UP Police officers only · IT Act 2000
+    </div>
+</div>
+
+<script>
+function toggleTheme(){const h=document.documentElement;h.setAttribute('data-theme',h.getAttribute('data-theme')==='dark'?'light':'dark');localStorage.setItem('theme',h.getAttribute('data-theme'));}
+(function(){const t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t);})();
+</script>
+</body>
+</html>

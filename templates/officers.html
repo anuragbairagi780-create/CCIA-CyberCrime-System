@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+{% block title %}Manage Officers{% endblock %}
+{% block page_title %}Manage Officers{% endblock %}
+
+{% block extra_style %}
+<style>
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.card{background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:20px}
+.card-title{font-size:14px;font-weight:600;margin-bottom:16px;display:flex;align-items:center;gap:8px}
+.card-title::before{content:'';width:3px;height:16px;background:var(--blue);border-radius:2px}
+.field{margin-bottom:12px}
+label{font-size:12px;color:var(--text2);font-weight:500;margin-bottom:5px;display:block}
+input,select{width:100%;background:var(--bg);border:1px solid var(--border2);border-radius:8px;color:var(--text);font-size:13px;padding:9px 12px;outline:none;transition:border-color .2s;font-family:'Inter',sans-serif}
+input:focus,select:focus{border-color:var(--blue)}
+
+table{width:100%;border-collapse:collapse}
+th{font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--text3);font-family:'Share Tech Mono',monospace;padding:10px 14px;text-align:left;border-bottom:1px solid var(--border)}
+td{padding:11px 14px;font-size:13px;border-bottom:1px solid var(--border);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:var(--bg4)}
+
+.role-badge{display:inline-block;padding:2px 10px;border-radius:10px;font-size:10px;font-weight:700;font-family:'Share Tech Mono',monospace}
+.role-admin{background:rgba(255,149,0,.12);color:var(--orange);border:1px solid rgba(255,149,0,.3)}
+.role-officer{background:rgba(30,111,255,.12);color:var(--blue);border:1px solid rgba(30,111,255,.25)}
+
+@media(max-width:768px){.grid2{grid-template-columns:1fr}}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="grid2">
+    <!-- Add Officer -->
+    <div class="card">
+        <div class="card-title">Add New Officer</div>
+        <form method="POST" action="{{ url_for('add_officer') }}">
+            <div class="field">
+                <label>Full Name</label>
+                <input type="text" name="name" placeholder="Officer full name" required>
+            </div>
+            <div class="field">
+                <label>Username</label>
+                <input type="text" name="username" placeholder="Login username" required autocomplete="off">
+            </div>
+            <div class="field">
+                <label>Password</label>
+                <input type="password" name="password" placeholder="Set password" required>
+            </div>
+            <div class="field">
+                <label>Badge Number</label>
+                <input type="text" name="badge" placeholder="e.g. CYB-2026-002">
+            </div>
+            <div class="field">
+                <label>Role</label>
+                <select name="role">
+                    <option value="officer">Officer</option>
+                    <option value="admin">Admin</option>
+                </select>
+            </div>
+            <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center">➕ Add Officer</button>
+        </form>
+    </div>
+
+    <!-- Officers List -->
+    <div class="card">
+        <div class="card-title">All Officers ({{ officers|length }})</div>
+        <table>
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Username</th>
+                    <th>Role</th>
+                    <th>Badge</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for o in officers %}
+                <tr>
+                    <td>{{ o.name }}</td>
+                    <td style="font-family:'Share Tech Mono',monospace;font-size:12px;color:var(--text2)">{{ o.username }}</td>
+                    <td><span class="role-badge role-{{ o.role }}">{{ o.role | upper }}</span></td>
+                    <td style="font-size:12px;color:var(--text3)">{{ o.badge_no or '—' }}</td>
+                    <td>
+                        {% if o.role != 'admin' %}
+                        <form method="POST" action="{{ url_for('delete_officer', oid=o.id) }}" onsubmit="return confirm('Delete officer {{ o.name }}?')">
+                            <button type="submit" class="btn btn-danger" style="padding:4px 10px;font-size:11px">🗑️</button>
+                        </form>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

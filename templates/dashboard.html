@@ -1,0 +1,129 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+
+{% block extra_style %}
+<style>
+.stats-grid { display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px; }
+.stat-card { background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:20px;position:relative;overflow:hidden; }
+.stat-card::before { content:'';position:absolute;top:0;right:0;width:60px;height:60px;border-radius:0 12px 0 60px;opacity:.08; }
+.stat-card.blue::before { background:var(--blue); }
+.stat-card.red::before { background:var(--red); }
+.stat-card.orange::before { background:var(--orange); }
+.stat-card.green::before { background:var(--green); }
+.stat-label { font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:1.5px;font-family:'Share Tech Mono',monospace;margin-bottom:8px; }
+.stat-value { font-size:32px;font-weight:700;line-height:1; }
+.stat-card.blue .stat-value { color:var(--blue); }
+.stat-card.red .stat-value { color:var(--red); }
+.stat-card.orange .stat-value { color:var(--orange); }
+.stat-card.green .stat-value { color:var(--green); }
+.stat-icon { font-size:22px;margin-bottom:8px; }
+
+.grid2 { display:grid;grid-template-columns:1fr 1fr;gap:16px; }
+.section-title { font-size:13px;font-weight:600;margin-bottom:16px;display:flex;align-items:center;gap:8px; }
+.section-title::before { content:'';width:3px;height:16px;background:var(--blue);border-radius:2px;flex-shrink:0; }
+
+.case-row { display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border); }
+.case-row:last-child { border-bottom:none; }
+.case-id { font-family:'Share Tech Mono',monospace;font-size:12px;color:var(--blue); }
+.case-cat { font-size:12px;color:var(--text2);margin-top:2px; }
+.case-time { font-size:11px;color:var(--text3); }
+
+.cat-item { display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border); }
+.cat-item:last-child { border-bottom:none; }
+.cat-name { font-size:13px;flex:1; }
+.cat-bar-wrap { width:100px;height:6px;background:var(--border2);border-radius:3px;overflow:hidden; }
+.cat-bar { height:100%;background:linear-gradient(90deg,var(--blue),var(--cyan));border-radius:3px; }
+.cat-count { font-family:'Share Tech Mono',monospace;font-size:12px;color:var(--text2);min-width:24px;text-align:right; }
+
+.empty-msg { text-align:center;padding:32px;color:var(--text3);font-size:13px; }
+
+@media (max-width: 900px) { .stats-grid { grid-template-columns: repeat(2, 1fr); } .grid2 { grid-template-columns: 1fr; } }
+</style>
+{% endblock %}
+
+{% block content %}
+<div style="margin-bottom:24px;">
+    <h1 style="font-size:20px;font-weight:700;">Welcome back, {{ session.officer_name }} 👮</h1>
+    <p style="color:var(--text2);font-size:13px;margin-top:4px;">Cyber Complaint Intelligence System · {{ session.badge_no }}</p>
+</div>
+
+<!-- Stats -->
+<div class="stats-grid">
+    <div class="stat-card blue">
+        <div class="stat-icon">📁</div>
+        <div class="stat-label">Total Cases</div>
+        <div class="stat-value">{{ total }}</div>
+    </div>
+    <div class="stat-card red">
+        <div class="stat-icon">🚨</div>
+        <div class="stat-label">Critical</div>
+        <div class="stat-value">{{ critical }}</div>
+    </div>
+    <div class="stat-card orange">
+        <div class="stat-icon">⚠️</div>
+        <div class="stat-label">High Risk</div>
+        <div class="stat-value">{{ high }}</div>
+    </div>
+    <div class="stat-card green">
+        <div class="stat-icon">🔓</div>
+        <div class="stat-label">Open Cases</div>
+        <div class="stat-value">{{ open_cases }}</div>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div style="display:flex;gap:12px;margin-bottom:24px;flex-wrap:wrap;">
+    <a href="{{ url_for('analyze') }}" class="btn btn-primary">🔍 New Analysis</a>
+    <a href="{{ url_for('history') }}" class="btn btn-secondary">📁 View All Cases</a>
+    {% if session.role == 'admin' %}
+    <a href="{{ url_for('manage_officers') }}" class="btn btn-secondary">👮 Manage Officers</a>
+    {% endif %}
+</div>
+
+<div class="grid2">
+    <!-- Recent Cases -->
+    <div class="card">
+        <div class="section-title">Recent Cases</div>
+        {% if recent %}
+            {% for c in recent %}
+            <div class="case-row">
+                <div>
+                    <a href="{{ url_for('view_case', complaint_id=c.complaint_id) }}" style="text-decoration:none;">
+                        <div class="case-id">{{ c.complaint_id }}</div>
+                    </a>
+                    <div class="case-cat">{{ c.crime_category or 'Analyzing...' }}</div>
+                </div>
+                <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;">
+                    {% if c.risk_level %}
+                    <span class="risk {{ c.risk_level }}"><span class="risk-dot-sm"></span>{{ c.risk_level }}</span>
+                    {% endif %}
+                    <div class="case-time">{{ c.created_at[:10] }}</div>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="empty-msg">No cases yet. <a href="{{ url_for('analyze') }}" style="color:var(--blue);">Analyze first complaint →</a></div>
+        {% endif %}
+    </div>
+
+    <!-- Crime Categories -->
+    <div class="card">
+        <div class="section-title">Top Crime Categories</div>
+        {% if categories %}
+            {% set max_count = categories[0].count %}
+            {% for cat in categories %}
+            <div class="cat-item">
+                <div class="cat-name">{{ cat.crime_category or 'Unknown' }}</div>
+                <div class="cat-bar-wrap">
+                    <div class="cat-bar" style="width:{{ (cat.count / max_count * 100)|int }}%"></div>
+                </div>
+                <div class="cat-count">{{ cat.count }}</div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="empty-msg">No data yet</div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

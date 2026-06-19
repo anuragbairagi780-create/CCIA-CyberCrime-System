@@ -1,0 +1,146 @@
+{% extends "base.html" %}
+{% block title %}Case History{% endblock %}
+{% block page_title %}Case History{% endblock %}
+
+{% block extra_style %}
+<style>
+.filters { background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:16px; }
+.filter-row { display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end; }
+.filter-field { display:flex;flex-direction:column;gap:5px;flex:1;min-width:140px; }
+.filter-field label { font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;font-family:'Share Tech Mono',monospace; }
+input[type=text],select { background:var(--bg);border:1px solid var(--border2);border-radius:8px;color:var(--text);font-size:13px;padding:8px 12px;outline:none;transition:border-color .2s;font-family:'Inter',sans-serif;width:100%; }
+input:focus,select:focus { border-color:var(--blue); }
+
+.table-card { background:var(--bg3);border:1px solid var(--border);border-radius:12px;overflow:hidden; }
+.table-header { padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between; }
+.table-title { font-size:13px;font-weight:600; }
+.table-count { font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--text3); }
+
+table { width:100%;border-collapse:collapse; }
+th { font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--text3);font-family:'Share Tech Mono',monospace;padding:10px 14px;text-align:left;border-bottom:1px solid var(--border); }
+td { padding:12px 14px;font-size:13px;border-bottom:1px solid var(--border);vertical-align:middle; }
+tr:last-child td { border-bottom:none; }
+tr:hover td { background:var(--bg4); }
+.case-link { font-family:'Share Tech Mono',monospace;font-size:12px;color:var(--blue);text-decoration:none; }
+.case-link:hover { text-decoration:underline; }
+.cat-text { font-size:12px;color:var(--text2); }
+.time-text { font-size:11px;color:var(--text3);font-family:'Share Tech Mono',monospace; }
+
+.pagination { display:flex;align-items:center;justify-content:center;gap:8px;padding:16px; }
+.page-btn { background:var(--bg);border:1px solid var(--border2);border-radius:6px;padding:6px 12px;color:var(--text2);font-size:13px;text-decoration:none;transition:all .15s; }
+.page-btn:hover,.page-btn.active { background:var(--blue);color:#fff;border-color:var(--blue); }
+.page-info { font-size:12px;color:var(--text3); }
+
+.empty-state { text-align:center;padding:48px 20px;color:var(--text3); }
+.empty-icon { font-size:36px;margin-bottom:12px; }
+
+.risk { display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:700;font-family:'Share Tech Mono',monospace;letter-spacing:1px; }
+.risk.CRITICAL{background:rgba(255,59,48,.15);border:1px solid rgba(255,59,48,.3);color:var(--red)}
+.risk.HIGH{background:rgba(255,149,0,.15);border:1px solid rgba(255,149,0,.3);color:var(--orange)}
+.risk.MEDIUM{background:rgba(255,214,10,.12);border:1px solid rgba(255,214,10,.25);color:var(--yellow)}
+.risk.LOW{background:rgba(48,209,88,.12);border:1px solid rgba(48,209,88,.25);color:var(--green)}
+
+.status-badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:600}
+.status-open{background:rgba(30,111,255,.12);color:var(--blue);border:1px solid rgba(30,111,255,.25)}
+.status-closed{background:rgba(48,209,88,.12);color:var(--green);border:1px solid rgba(48,209,88,.25)}
+.status-pending{background:rgba(255,149,0,.12);color:var(--orange);border:1px solid rgba(255,149,0,.25)}
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- Filters -->
+<form method="GET" class="filters">
+    <div class="filter-row">
+        <div class="filter-field" style="flex:2">
+            <label>Search</label>
+            <input type="text" name="search" value="{{ search }}" placeholder="Case ID, keyword, category...">
+        </div>
+        <div class="filter-field">
+            <label>Risk Level</label>
+            <select name="risk">
+                <option value="">All Risks</option>
+                <option value="CRITICAL" {% if risk_filter=='CRITICAL' %}selected{% endif %}>🔴 CRITICAL</option>
+                <option value="HIGH" {% if risk_filter=='HIGH' %}selected{% endif %}>🟠 HIGH</option>
+                <option value="MEDIUM" {% if risk_filter=='MEDIUM' %}selected{% endif %}>🟡 MEDIUM</option>
+                <option value="LOW" {% if risk_filter=='LOW' %}selected{% endif %}>🟢 LOW</option>
+            </select>
+        </div>
+        <div class="filter-field">
+            <label>Status</label>
+            <select name="status">
+                <option value="">All Status</option>
+                <option value="open" {% if status_filter=='open' %}selected{% endif %}>Open</option>
+                <option value="pending" {% if status_filter=='pending' %}selected{% endif %}>Pending</option>
+                <option value="closed" {% if status_filter=='closed' %}selected{% endif %}>Closed</option>
+            </select>
+        </div>
+        <div class="filter-field">
+            <label>Category</label>
+            <select name="category">
+                <option value="">All Categories</option>
+                {% for cat in categories %}
+                <option value="{{ cat.crime_category }}" {% if category_filter==cat.crime_category %}selected{% endif %}>{{ cat.crime_category }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <button type="submit" class="btn btn-primary" style="align-self:flex-end">🔎 Filter</button>
+        <a href="{{ url_for('history') }}" class="btn btn-secondary" style="align-self:flex-end">✕ Clear</a>
+    </div>
+</form>
+
+<!-- Table -->
+<div class="table-card">
+    <div class="table-header">
+        <div class="table-title">Case Records</div>
+        <div class="table-count">{{ total_count }} cases found</div>
+    </div>
+
+    {% if complaints %}
+    <table>
+        <thead>
+            <tr>
+                <th>Case ID</th>
+                <th>Category</th>
+                <th>Risk</th>
+                <th>Status</th>
+                <th>Officer</th>
+                <th>Date</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for c in complaints %}
+            <tr>
+                <td><a href="{{ url_for('view_case', complaint_id=c.complaint_id) }}" class="case-link">{{ c.complaint_id }}</a></td>
+                <td><span class="cat-text">{{ c.crime_category or '—' }}</span></td>
+                <td>{% if c.risk_level %}<span class="risk {{ c.risk_level }}">{{ c.risk_level }}</span>{% else %}—{% endif %}</td>
+                <td><span class="status-badge status-{{ c.status }}">{{ c.status | capitalize }}</span></td>
+                <td><span class="cat-text">{{ c.officer_name or '—' }}</span></td>
+                <td><span class="time-text">{{ c.created_at[:10] }}</span></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <!-- Pagination -->
+    {% if total_pages > 1 %}
+    <div class="pagination">
+        {% if page > 1 %}
+        <a href="?page={{ page-1 }}&search={{ search }}&risk={{ risk_filter }}&category={{ category_filter }}&status={{ status_filter }}" class="page-btn">← Prev</a>
+        {% endif %}
+        <span class="page-info">Page {{ page }} of {{ total_pages }}</span>
+        {% if page < total_pages %}
+        <a href="?page={{ page+1 }}&search={{ search }}&risk={{ risk_filter }}&category={{ category_filter }}&status={{ status_filter }}" class="page-btn">Next →</a>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    {% else %}
+    <div class="empty-state">
+        <div class="empty-icon">📭</div>
+        <div style="font-size:14px;color:var(--text2);margin-bottom:8px;">No cases found</div>
+        <div style="font-size:12px;">Try different filters or <a href="{{ url_for('analyze') }}" style="color:var(--blue);">analyze a new complaint</a></div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

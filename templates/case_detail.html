@@ -1,0 +1,165 @@
+{% extends "base.html" %}
+{% block title %}{{ case.complaint_id }}{% endblock %}
+{% block page_title %}Case: {{ case.complaint_id }}{% endblock %}
+
+{% block extra_style %}
+<style>
+.case-header { background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:16px;display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px; }
+.case-id-big { font-family:'Share Tech Mono',monospace;font-size:20px;color:var(--cyan);letter-spacing:2px; }
+.case-meta { display:flex;gap:12px;flex-wrap:wrap;margin-top:8px; }
+.meta-item { font-size:12px;color:var(--text2);display:flex;align-items:center;gap:4px; }
+
+.grid2 { display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px; }
+.card { background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:18px; }
+.card-label { font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:10px; }
+
+.risk-badge { display:inline-flex;align-items:center;gap:6px;padding:5px 14px;border-radius:16px;font-family:'Share Tech Mono',monospace;font-size:12px;font-weight:700;letter-spacing:2px; }
+.risk-badge.CRITICAL{background:rgba(255,59,48,.15);border:1px solid rgba(255,59,48,.4);color:var(--red)}
+.risk-badge.HIGH{background:rgba(255,149,0,.15);border:1px solid rgba(255,149,0,.4);color:var(--orange)}
+.risk-badge.MEDIUM{background:rgba(255,214,10,.12);border:1px solid rgba(255,214,10,.3);color:var(--yellow)}
+.risk-badge.LOW{background:rgba(48,209,88,.12);border:1px solid rgba(48,209,88,.3);color:var(--green)}
+.rdot{width:7px;height:7px;border-radius:50%;animation:blink 1.5s infinite}
+.CRITICAL .rdot{background:var(--red)}.HIGH .rdot{background:var(--orange)}.MEDIUM .rdot{background:var(--yellow)}.LOW .rdot{background:var(--green)}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+
+.cat-tag{display:inline-flex;align-items:center;gap:6px;background:rgba(30,111,255,.1);border:1px solid rgba(30,111,255,.25);border-radius:6px;padding:5px 12px;font-size:13px;font-weight:600;color:#7eb8ff}
+
+.steps-list{display:flex;flex-direction:column;gap:8px}
+.step-item{display:flex;gap:10px;align-items:flex-start}
+.step-num{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--blue);background:rgba(30,111,255,.1);border:1px solid rgba(30,111,255,.2);border-radius:4px;width:22px;height:22px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px}
+.step-text{font-size:13px;line-height:1.5;padding-top:2px}
+
+.ind-list{display:flex;flex-direction:column;gap:5px}
+.ind-item{font-size:13px;line-height:1.5;display:flex;gap:6px}
+.ind-item::before{content:'›';color:var(--orange);font-weight:bold;flex-shrink:0}
+
+.ind-chip{background:rgba(0,212,255,.08);border:1px solid rgba(0,212,255,.2);border-radius:5px;padding:3px 8px;font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--cyan);word-break:break-all;display:inline-block;margin:2px}
+
+.complaint-text{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:14px;font-size:13px;line-height:1.7;color:var(--text2);white-space:pre-wrap;word-break:break-word}
+
+.priority-box{background:linear-gradient(135deg,rgba(30,111,255,.08),rgba(0,212,255,.05));border:1px solid rgba(30,111,255,.3);border-radius:12px;padding:16px;margin-bottom:16px;display:flex;gap:12px}
+.priority-label{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--cyan);letter-spacing:2px;margin-bottom:4px}
+
+.status-form { display:flex;gap:8px;align-items:center;flex-wrap:wrap; }
+.status-select { background:var(--bg);border:1px solid var(--border2);border-radius:8px;color:var(--text);font-size:13px;padding:8px 12px;outline:none; }
+
+@media(max-width:640px){.grid2{grid-template-columns:1fr}}
+@media print{.sidebar,.topbar,.btn,.status-form,.case-header .btn{display:none!important}.main-content{margin-left:0!important}.page{padding:0!important}}
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- Case Header -->
+<div class="case-header">
+    <div>
+        <div class="case-id-big">{{ case.complaint_id }}</div>
+        <div class="case-meta">
+            <span class="meta-item">👮 {{ case.officer_name or 'Unknown' }}</span>
+            <span class="meta-item">🪪 {{ case.badge_no or 'N/A' }}</span>
+            <span class="meta-item">📅 {{ case.created_at[:16] }}</span>
+            <span class="meta-item">🌐 {{ case.language | capitalize }}</span>
+        </div>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+        <form method="POST" action="{{ url_for('update_status', complaint_id=case.complaint_id) }}" class="status-form">
+            <select name="status" class="status-select">
+                <option value="open" {% if case.status=='open' %}selected{% endif %}>🔓 Open</option>
+                <option value="pending" {% if case.status=='pending' %}selected{% endif %}>⏳ Pending</option>
+                <option value="closed" {% if case.status=='closed' %}selected{% endif %}>✅ Closed</option>
+            </select>
+            <button type="submit" class="btn btn-secondary">Update</button>
+        </form>
+        <button class="btn btn-secondary" onclick="window.print()">🖨️ Print</button>
+        <a href="{{ url_for('history') }}" class="btn btn-secondary">← Back</a>
+    </div>
+</div>
+
+<!-- Priority Action -->
+{% if case.priority_action %}
+<div class="priority-box">
+    <div style="font-size:18px;flex-shrink:0">⚡</div>
+    <div>
+        <div class="priority-label">Immediate Priority Action</div>
+        <div style="font-size:14px;font-weight:500;line-height:1.5">{{ case.priority_action }}</div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Summary + Classification -->
+<div class="grid2">
+    <div class="card">
+        <div class="card-label">Case Summary</div>
+        <div style="font-size:13px;line-height:1.6">{{ case.case_summary }}</div>
+    </div>
+    <div class="card">
+        <div class="card-label">Crime Classification</div>
+        <div style="margin-bottom:14px"><span class="cat-tag">🏷️ {{ case.crime_category }}</span></div>
+        <div class="card-label">Risk Level</div>
+        <span class="risk-badge {{ case.risk_level }}"><span class="rdot"></span>{{ case.risk_level }}</span>
+        {% if case.risk_reason %}
+        <div style="margin-top:8px;font-size:12px;color:var(--text2)">{{ case.risk_reason }}</div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Auto Extracted Indicators -->
+{% if case.indicators_json %}
+<div class="card" style="margin-bottom:16px">
+    <div class="card-label">🔍 Auto-Extracted Indicators</div>
+    <div style="display:flex;flex-wrap:wrap;gap:16px;">
+        {% if case.indicators_json.mobile_numbers %}
+        <div><div style="font-size:10px;color:var(--text3);font-family:'Share Tech Mono',monospace;margin-bottom:4px;">📱 MOBILE</div>{% for n in case.indicators_json.mobile_numbers %}<span class="ind-chip">{{ n }}</span>{% endfor %}</div>
+        {% endif %}
+        {% if case.indicators_json.email_ids %}
+        <div><div style="font-size:10px;color:var(--text3);font-family:'Share Tech Mono',monospace;margin-bottom:4px;">📧 EMAIL</div>{% for e in case.indicators_json.email_ids %}<span class="ind-chip">{{ e }}</span>{% endfor %}</div>
+        {% endif %}
+        {% if case.indicators_json.upi_ids %}
+        <div><div style="font-size:10px;color:var(--text3);font-family:'Share Tech Mono',monospace;margin-bottom:4px;">💳 UPI</div>{% for u in case.indicators_json.upi_ids %}<span class="ind-chip">{{ u }}</span>{% endfor %}</div>
+        {% endif %}
+        {% if case.indicators_json.urls %}
+        <div><div style="font-size:10px;color:var(--text3);font-family:'Share Tech Mono',monospace;margin-bottom:4px;">🔗 URLs</div>{% for u in case.indicators_json.urls %}<span class="ind-chip">{{ u[:40] }}</span>{% endfor %}</div>
+        {% endif %}
+    </div>
+</div>
+{% endif %}
+
+<!-- AI Indicators + Steps -->
+<div class="grid2">
+    {% if case.key_indicators %}
+    <div class="card">
+        <div class="card-label">🔎 Key Indicators (AI)</div>
+        <div class="ind-list">
+            {% for item in case.key_indicators %}<div class="ind-item">{{ item }}</div>{% endfor %}
+        </div>
+    </div>
+    {% endif %}
+    {% if case.investigation_steps %}
+    <div class="card">
+        <div class="card-label">📋 Investigation Steps</div>
+        <div class="steps-list">
+            {% for step in case.investigation_steps %}
+            <div class="step-item">
+                <span class="step-num">{{ loop.index }}</span>
+                <span class="step-text">{{ step }}</span>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Legal + Original Complaint -->
+{% if case.legal_sections %}
+<div class="card" style="margin-bottom:16px">
+    <div class="card-label">⚖️ Applicable Legal Sections</div>
+    <div style="font-size:13px;line-height:1.6">{{ case.legal_sections }}</div>
+</div>
+{% endif %}
+
+<div class="card">
+    <div class="card-label">📝 Original Complaint Text</div>
+    <div class="complaint-text">{{ case.complaint_text }}</div>
+</div>
+
+{% endblock %}

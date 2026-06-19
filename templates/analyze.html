@@ -1,0 +1,213 @@
+{% extends "base.html" %}
+{% block title %}Analyze Complaint{% endblock %}
+{% block page_title %}Analyze Complaint{% endblock %}
+
+{% block extra_style %}
+<style>
+.form-card { background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:24px;margin-bottom:20px; }
+.form-label { font-size:11px;font-family:'Share Tech Mono',monospace;color:var(--text2);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:8px;display:flex;align-items:center;gap:6px; }
+.form-label::before { content:'';width:3px;height:12px;background:var(--blue);border-radius:2px; }
+textarea { width:100%;background:var(--bg);border:1px solid var(--border2);border-radius:8px;color:var(--text);font-size:14px;padding:14px;resize:vertical;min-height:150px;outline:none;transition:border-color .2s;font-family:'Inter',sans-serif;line-height:1.7; }
+textarea:focus { border-color:var(--blue);box-shadow:0 0 0 3px rgba(30,111,255,.1); }
+textarea::placeholder { color:var(--text3); }
+.form-row { display:flex;gap:12px;align-items:center;margin-top:14px;flex-wrap:wrap; }
+.lang-select { background:var(--bg);border:1px solid var(--border2);border-radius:8px;color:var(--text);font-size:13px;padding:9px 14px;outline:none;cursor:pointer; }
+.error-box { background:rgba(255,59,48,.08);border:1px solid rgba(255,59,48,.3);border-radius:8px;padding:12px 16px;color:var(--red);font-size:13px;margin-bottom:16px;display:flex;align-items:center;gap:8px; }
+.success-box { background:rgba(48,209,88,.08);border:1px solid rgba(48,209,88,.3);border-radius:8px;padding:12px 16px;color:var(--green);font-size:13px;margin-bottom:16px;display:flex;align-items:center;gap:8px; }
+
+/* Results */
+.results-header { display:flex;align-items:center;gap:12px;margin-bottom:16px; }
+.results-title { font-family:'Share Tech Mono',monospace;font-size:12px;color:var(--cyan);letter-spacing:2px;text-transform:uppercase;white-space:nowrap; }
+.results-line { flex:1;height:1px;background:linear-gradient(90deg,var(--border2),transparent); }
+
+.priority-box { background:linear-gradient(135deg,rgba(30,111,255,.08),rgba(0,212,255,.05));border:1px solid rgba(30,111,255,.3);border-radius:12px;padding:18px;margin-bottom:16px;display:flex;gap:12px;align-items:flex-start; }
+.priority-label { font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--cyan);letter-spacing:2px;margin-bottom:4px; }
+.priority-text { font-size:14px;font-weight:500;line-height:1.5; }
+
+.grid2 { display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px; }
+.card { background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:18px; }
+.card-label { font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:10px; }
+
+.risk-badge { display:inline-flex;align-items:center;gap:6px;padding:5px 14px;border-radius:16px;font-family:'Share Tech Mono',monospace;font-size:12px;font-weight:700;letter-spacing:2px; }
+.risk-badge.CRITICAL { background:rgba(255,59,48,.15);border:1px solid rgba(255,59,48,.4);color:var(--red); }
+.risk-badge.HIGH { background:rgba(255,149,0,.15);border:1px solid rgba(255,149,0,.4);color:var(--orange); }
+.risk-badge.MEDIUM { background:rgba(255,214,10,.12);border:1px solid rgba(255,214,10,.3);color:var(--yellow); }
+.risk-badge.LOW { background:rgba(48,209,88,.12);border:1px solid rgba(48,209,88,.3);color:var(--green); }
+.rdot { width:7px;height:7px;border-radius:50%;animation:blink 1.5s infinite; }
+.CRITICAL .rdot{background:var(--red)}.HIGH .rdot{background:var(--orange)}.MEDIUM .rdot{background:var(--yellow)}.LOW .rdot{background:var(--green)}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+
+.cat-tag { display:inline-flex;align-items:center;gap:6px;background:rgba(30,111,255,.1);border:1px solid rgba(30,111,255,.25);border-radius:6px;padding:5px 12px;font-size:13px;font-weight:600;color:#7eb8ff; }
+
+.indicators-grid { display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px;margin-bottom:16px; }
+.ind-card { background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:12px; }
+.ind-type { font-family:'Share Tech Mono',monospace;font-size:9px;text-transform:uppercase;letter-spacing:1.5px;color:var(--cyan);margin-bottom:6px; }
+.ind-chip { background:rgba(0,212,255,.08);border:1px solid rgba(0,212,255,.2);border-radius:5px;padding:3px 8px;font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--cyan);word-break:break-all;display:block;margin-bottom:3px; }
+
+.steps-list { display:flex;flex-direction:column;gap:8px; }
+.step-item { display:flex;gap:10px;align-items:flex-start; }
+.step-num { font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--blue);background:rgba(30,111,255,.1);border:1px solid rgba(30,111,255,.2);border-radius:4px;width:22px;height:22px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px; }
+.step-text { font-size:13px;line-height:1.5;padding-top:2px; }
+
+.ind-list { display:flex;flex-direction:column;gap:5px; }
+.ind-item { font-size:13px;line-height:1.5;display:flex;gap:6px; }
+.ind-item::before { content:'›';color:var(--orange);font-weight:bold;flex-shrink:0; }
+
+.print-btn { background:var(--bg3);border:1px solid var(--border2);border-radius:8px;padding:8px 16px;color:var(--text2);font-size:13px;cursor:pointer;display:flex;align-items:center;gap:6px; }
+.print-btn:hover { color:var(--text); }
+
+@media(max-width:640px){.grid2{grid-template-columns:1fr}}
+@media print {
+    .sidebar,.topbar,.form-card,.print-btn,.btn { display:none!important; }
+    .main-content { margin-left:0!important; }
+    .page { padding:0!important; }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- Form -->
+<div class="form-card">
+    <div class="form-label">Enter Complaint</div>
+    <form method="POST" id="cForm" onsubmit="showLoading()">
+        <textarea name="complaint" placeholder="Complaint yahan paste karo / Paste the complaint here...
+
+Example: Victim received a call from 9876543210 claiming to be SBI bank officer. Caller asked for OTP. Victim shared OTP and Rs.45,000 was debited. Money sent to UPI ID fraud@paytm">{{ complaint }}</textarea>
+        <div class="form-row">
+            <select name="language" class="lang-select">
+                <option value="english" {% if language=='english' %}selected{% endif %}>🇬🇧 English</option>
+                <option value="hindi" {% if language=='hindi' %}selected{% endif %}>🇮🇳 Hindi</option>
+                <option value="both" {% if language=='both' %}selected{% endif %}>🌐 Hindi + English</option>
+            </select>
+            <div style="flex:1"></div>
+            <button type="submit" class="btn btn-primary">🔍 Analyze Complaint</button>
+        </div>
+    </form>
+</div>
+
+{% if error %}
+<div class="error-box">⚠️ {{ error }}</div>
+{% endif %}
+
+{% if saved_id %}
+<div style="margin-top:15px;">
+    <a href="/download/{{ saved_id }}">
+        📄 Download PDF Report
+    </a>
+</div>
+<div class="success-box">✅ Case saved as <strong>{{ saved_id }}</strong> — <a href="{{ url_for('view_case', complaint_id=saved_id) }}" style="color:var(--green);">View Case →</a></div>
+{% endif %}
+
+{% if result %}
+<div class="results-header">
+    <span class="results-title">Investigation Report</span>
+    <div class="results-line"></div>
+    <button class="print-btn" onclick="window.print()">🖨️ Print</button>
+</div>
+
+<!-- Priority -->
+{% if result.priority_action %}
+<div class="priority-box">
+    <div style="font-size:20px;flex-shrink:0">⚡</div>
+    <div>
+        <div class="priority-label">Immediate Priority Action</div>
+        <div class="priority-text">{{ result.priority_action }}</div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Summary + Risk -->
+<div class="grid2">
+    <div class="card">
+        <div class="card-label">Case Summary</div>
+        <div style="font-size:13px;line-height:1.6;">{{ result.case_summary }}</div>
+    </div>
+    <div class="card">
+        <div class="card-label">Crime Classification</div>
+        <div style="margin-bottom:14px;"><span class="cat-tag">🏷️ {{ result.crime_category }}</span></div>
+        <div class="card-label">Risk Level</div>
+        <span class="risk-badge {{ result.risk_level }}"><span class="rdot"></span>{{ result.risk_level }}</span>
+        {% if result.risk_reason %}
+        <div style="margin-top:8px;font-size:12px;color:var(--text2);">{{ result.risk_reason }}</div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Auto-Extracted Indicators -->
+{% if indicators %}
+<div class="results-header" style="margin-bottom:10px;">
+    <span class="results-title" style="color:var(--orange);">Auto-Extracted Indicators</span>
+    <div class="results-line"></div>
+</div>
+<div class="indicators-grid">
+    {% if indicators.mobile_numbers %}
+    <div class="ind-card">
+        <div class="ind-type">📱 Mobile Numbers</div>
+        {% for n in indicators.mobile_numbers %}<span class="ind-chip">{{ n }}</span>{% endfor %}
+    </div>
+    {% endif %}
+    {% if indicators.email_ids %}
+    <div class="ind-card">
+        <div class="ind-type">📧 Email IDs</div>
+        {% for e in indicators.email_ids %}<span class="ind-chip">{{ e }}</span>{% endfor %}
+    </div>
+    {% endif %}
+    {% if indicators.urls %}
+    <div class="ind-card">
+        <div class="ind-type">🔗 URLs</div>
+        {% for u in indicators.urls %}<span class="ind-chip">{{ u[:38] }}{% if u|length>38 %}...{% endif %}</span>{% endfor %}
+    </div>
+    {% endif %}
+    {% if indicators.upi_ids %}
+    <div class="ind-card">
+        <div class="ind-type">💳 UPI IDs</div>
+        {% for u in indicators.upi_ids %}<span class="ind-chip">{{ u }}</span>{% endfor %}
+    </div>
+    {% endif %}
+    {% if indicators.possible_account_numbers %}
+    <div class="ind-card">
+        <div class="ind-type">🏦 Account Numbers</div>
+        {% for a in indicators.possible_account_numbers %}<span class="ind-chip">{{ a }}</span>{% endfor %}
+    </div>
+    {% endif %}
+</div>
+{% endif %}
+
+<!-- AI Indicators + Steps -->
+<div class="grid2">
+    {% if result.key_indicators %}
+    <div class="card">
+        <div class="card-label">🔎 Key Indicators (AI)</div>
+        <div class="ind-list">
+            {% for item in result.key_indicators %}
+            <div class="ind-item">{{ item }}</div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+    {% if result.investigation_steps %}
+    <div class="card">
+        <div class="card-label">📋 Investigation Steps</div>
+        <div class="steps-list">
+            {% for step in result.investigation_steps %}
+            <div class="step-item">
+                <span class="step-num">{{ loop.index }}</span>
+                <span class="step-text">{{ step }}</span>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Legal -->
+{% if result.legal_sections %}
+<div class="card">
+    <div class="card-label">⚖️ Applicable Legal Sections</div>
+    <div style="font-size:13px;line-height:1.6;">{{ result.legal_sections }}</div>
+</div>
+{% endif %}
+
+{% endif %}
+{% endblock %}
