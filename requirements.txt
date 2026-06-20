@@ -1,11 +1,9 @@
 Flask
 requests
 python-dotenv
-sentence-transformers
 scikit-learn
 networkx
 pyvis
 pdfplumber
-faiss-cpu
 reportlab
 gunicorn
