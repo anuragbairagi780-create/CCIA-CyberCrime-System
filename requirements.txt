@@ -1,7 +1,7 @@
 Flask
 requests
 python-dotenv
-sentence-transformers==2.2.2
+sentence-transformers
 scikit-learn
 networkx
 pyvis
@@ -9,4 +9,3 @@ pdfplumber
 faiss-cpu
 reportlab
 gunicorn
-torch==2.1.0
