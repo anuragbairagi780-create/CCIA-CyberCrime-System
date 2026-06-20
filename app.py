@@ -1,4 +1,4 @@
-from legal_knowledge import get_legal_kb
+#from legal_knowledge import get_legal_kb
 from flask import Flask, render_template, request, redirect, url_for, session, make_response, send_file, jsonify, Response
 from dotenv import load_dotenv
 from werkzeug.utils import secure_filename
