@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block title %}Upload Evidence - {{ complaint_id }}{% endblock %}
+{% block page_title %}Upload Evidence for {{ complaint_id }}{% endblock %}
+
+{% block extra_style %}
+<style>
+    .drop-zone { border: 2px dashed var(--border2); border-radius: 12px; padding: 40px; text-align: center; transition: all 0.2s; }
+    .drop-zone:hover { border-color: var(--blue); background: var(--bg4); }
+    .drop-zone input[type="file"] { display: none; }
+    .drop-zone label { cursor: pointer; color: var(--blue); font-weight: 600; }
+    .drop-zone p { color: var(--text3); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width:600px;margin:0 auto;">
+    <form method="POST" enctype="multipart/form-data">
+        <div class="drop-zone" id="dropZone">
+            <div style="font-size:48px;margin-bottom:12px;">📁</div>
+            <p>Drag & drop your file here, or <label for="fileInput">browse</label></p>
+            <input type="file" name="file" id="fileInput" required>
+            <p style="font-size:12px;color:var(--text3);margin-top:10px;">Allowed: PNG, JPG, PDF, MP3, MP4, DOC, TXT</p>
+        </div>
+        <div class="field" style="margin-top:16px;">
+            <label>Description (optional)</label>
+            <input type="text" name="description" placeholder="e.g., Bank statement screenshot">
+        </div>
+        <div style="display:flex;gap:12px;margin-top:16px;">
+            <button type="submit" class="btn btn-primary">📤 Upload</button>
+            <a href="{{ url_for('view_case', complaint_id=complaint_id) }}" class="btn btn-secondary">Cancel</a>
+        </div>
+    </form>
+</div>
+
+<script>
+    const dropZone = document.getElementById('dropZone');
+    const fileInput = document.getElementById('fileInput');
+
+    dropZone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        dropZone.style.borderColor = 'var(--blue)';
+        dropZone.style.background = 'var(--bg4)';
+    });
+
+    dropZone.addEventListener('dragleave', () => {
+        dropZone.style.borderColor = 'var(--border2)';
+        dropZone.style.background = 'transparent';
+    });
+
+    dropZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropZone.style.borderColor = 'var(--border2)';
+        dropZone.style.background = 'transparent';
+        fileInput.files = e.dataTransfer.files;
+    });
+</script>
+{% endblock %}

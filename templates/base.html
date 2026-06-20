@@ -13,6 +13,7 @@
             --text:#0d1b2a;--text2:#3a4a5c;--text3:#7a8a9a;
             --blue:#00308f;--gold:#c8a000;--gold-light:#f5d060;
             --red:#b22222;--orange:#c86400;--green:#1a7a3a;--yellow:#8a6a00;
+            --cyan:#00b4d8;   /* ADDED */
             --sidebar-bg:#001a5c;--sidebar-dim:#7a8fc0;--topbar-bg:#00308f;
         }
         [data-theme="dark"]{
@@ -21,6 +22,7 @@
             --text:#e8eaf0;--text2:#8892a4;--text3:#4a5568;
             --blue:#6a9ff0;--gold:#f0c040;--gold-light:#f5d060;
             --red:#ff4444;--orange:#ff9500;--green:#30d158;--yellow:#ffd60a;
+            --cyan:#00d4ff;   /* ADDED */
             --sidebar-bg:#080318;--sidebar-dim:#5a4a80;--topbar-bg:#0d0520;
         }
 
@@ -139,6 +141,11 @@
         <div class="nav-section-label">Main Menu</div>
         <a href="{{ url_for('dashboard') }}" class="nav-item {% if request.endpoint=='dashboard' %}active{% endif %}"><span class="nav-icon">📊</span> Dashboard</a>
         <a href="{{ url_for('analyze') }}" class="nav-item {% if request.endpoint=='analyze' %}active{% endif %}"><span class="nav-icon">🔍</span> Analyze Complaint</a>
+        <a href="{{ url_for('command_center') }}" class="nav-item {% if request.endpoint=='command_center' %}active{% endif %}">
+            <span class="nav-icon">🛸</span> Command Center
+        </a>
+        <!-- NEW: Crime Heatmap -->
+        <a href="{{ url_for('heatmap') }}" class="nav-item {% if request.endpoint=='heatmap' %}active{% endif %}"><span class="nav-icon">🗺️</span> Crime Heatmap</a>
         <a href="{{ url_for('history') }}" class="nav-item {% if request.endpoint=='history' %}active{% endif %}"><span class="nav-icon">📁</span> Case History</a>
         {% if session.role == 'admin' %}
         <div class="nav-section-label" style="margin-top:8px;">Admin Panel</div>
@@ -172,7 +179,12 @@
 <script>
 function toggleTheme(){const h=document.documentElement;h.setAttribute('data-theme',h.getAttribute('data-theme')==='dark'?'light':'dark');localStorage.setItem('theme',h.getAttribute('data-theme'));}
 (function(){const t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t);})();
-function showLoading(){document.getElementById('loadingOverlay').classList.add('active');}
+function showLoading() {
+    const el = document.getElementById('loadingOverlay');
+    if (el) {
+        el.classList.add('active');
+    }
+}
 </script>
 {% block extra_script %}{% endblock %}
 </body>

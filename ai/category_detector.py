@@ -1,12 +1,28 @@
 def detect_category(text):
     text = text.lower()
 
+    scores = {
+        "Investment Scam": 0,
+        "OTP Fraud": 0,
+        "Banking Fraud": 0,
+        "UPI Fraud": 0,
+        "Job Scam": 0,
+        "KYC Scam": 0
+    }
+
     categories = {
-        "UPI Fraud": [
-            "upi", "paytm", "phonepe",
-            "gpay", "google pay",
-            "@paytm", "@ybl", "@ibl",
-            "@axl", "@apl"
+        "Investment Scam": [
+            "investment",
+            "invest",
+            "profit",
+            "returns",
+            "return",
+            "crypto",
+            "trading",
+            "double money",
+            "telegram group",
+            "stock market",
+            "forex"
         ],
 
         "OTP Fraud": [
@@ -16,20 +32,26 @@ def detect_category(text):
         ],
 
         "Banking Fraud": [
-            "bank", "account",
+            "bank",
+            "bank account",
+            "account",
             "debit card",
             "credit card",
-            "net banking"
+            "net banking",
+            "ifsc"
         ],
 
-        "Investment Scam": [
-            "investment",
-            "invest",
-            "profit",
-            "returns",
-            "crypto",
-            "trading",
-            "double money"
+        "UPI Fraud": [
+            "upi",
+            "paytm",
+            "phonepe",
+            "gpay",
+            "google pay",
+            "@paytm",
+            "@ybl",
+            "@ibl",
+            "@axl",
+            "@apl"
         ],
 
         "Job Scam": [
@@ -37,7 +59,8 @@ def detect_category(text):
             "hiring",
             "vacancy",
             "recruitment",
-            "work from home"
+            "work from home",
+            "part time job"
         ],
 
         "KYC Scam": [
@@ -47,24 +70,40 @@ def detect_category(text):
         ]
     }
 
-    scores = {}
-
+    # Calculate scores
     for category, keywords in categories.items():
-        score = 0
-
         for keyword in keywords:
             if keyword in text:
-                score += 2
 
-        scores[category] = score
+                if category == "Investment Scam":
+                    scores[category] += 4
+
+                elif category == "OTP Fraud":
+                    scores[category] += 5
+
+                else:
+                    scores[category] += 2
 
     # Special Priority Rules
 
-    if "@paytm" in text or "@ybl" in text or "@ibl" in text:
-        scores["UPI Fraud"] += 5
-
     if "otp" in text:
-        scores["OTP Fraud"] += 15
+        scores["OTP Fraud"] += 20
+
+    if (
+        "investment" in text
+        or "profit" in text
+        or "returns" in text
+        or "crypto" in text
+        or "trading" in text
+    ):
+        scores["Investment Scam"] += 10
+
+    if (
+        "@paytm" in text
+        or "@ybl" in text
+        or "@ibl" in text
+    ):
+        scores["UPI Fraud"] += 3
 
     if "bank account" in text:
         scores["Banking Fraud"] += 5

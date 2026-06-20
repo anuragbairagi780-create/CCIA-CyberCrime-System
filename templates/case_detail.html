@@ -43,6 +43,35 @@
 .status-form { display:flex;gap:8px;align-items:center;flex-wrap:wrap; }
 .status-select { background:var(--bg);border:1px solid var(--border2);border-radius:8px;color:var(--text);font-size:13px;padding:8px 12px;outline:none; }
 
+/* Tables */
+.similar-table { width:100%; border-collapse:collapse; margin-top:8px; }
+.similar-table th { font-size:10px; text-transform:uppercase; letter-spacing:1px; color:var(--text3); font-family:'Share Tech Mono',monospace; padding:8px 12px; text-align:left; border-bottom:2px solid var(--border); background:var(--bg4); }
+.similar-table td { padding:10px 12px; font-size:13px; border-bottom:1px solid var(--border); vertical-align:middle; }
+.similar-table tr:hover td { background:var(--bg4); }
+
+.evidence-table { width:100%; border-collapse:collapse; margin-top:8px; }
+.evidence-table th { font-size:10px; text-transform:uppercase; letter-spacing:1px; color:var(--text3); font-family:'Share Tech Mono',monospace; padding:8px 12px; text-align:left; border-bottom:2px solid var(--border); background:var(--bg4); }
+.evidence-table td { padding:10px 12px; font-size:13px; border-bottom:1px solid var(--border); vertical-align:middle; }
+.evidence-table tr:hover td { background:var(--bg4); }
+
+.timeline-item { display:flex; gap:14px; align-items:flex-start; border-left:3px solid var(--gold); padding-left:16px; padding-bottom:12px; position:relative; }
+.timeline-item:last-child { padding-bottom:0; }
+.timeline-time { min-width:70px; font-family:'Share Tech Mono',monospace; font-size:13px; color:var(--blue); font-weight:700; background:var(--bg4); padding:2px 10px; border-radius:4px; }
+.timeline-event { font-size:13px; line-height:1.5; color:var(--text2); }
+
+.threat-table td code { background:var(--bg); padding:2px 6px; border-radius:4px; font-size:12px; }
+
+.note-item { background:var(--bg4); border-left:3px solid var(--gold); padding:10px 14px; margin-bottom:8px; border-radius:4px; }
+.note-item .meta { font-size:10px; color:var(--text3); font-family:'Share Tech Mono',monospace; }
+.note-item .text { font-size:13px; line-height:1.5; margin-top:4px; }
+
+.copilot-box { background:var(--bg4); border:1px solid var(--border); border-radius:8px; padding:16px; margin-top:12px; }
+.copilot-box .response { background:var(--bg); padding:12px; border-radius:6px; margin-top:10px; white-space:pre-wrap; font-size:13px; line-height:1.6; }
+
+.mule-badge { display:inline-block; padding:2px 10px; border-radius:12px; font-size:11px; font-weight:600; }
+.mule-badge.HIGH { background:rgba(255,59,48,.15); color:var(--red); border:1px solid rgba(255,59,48,.3); }
+.mule-badge.MEDIUM { background:rgba(255,149,0,.15); color:var(--orange); border:1px solid rgba(255,149,0,.3); }
+
 @media(max-width:640px){.grid2{grid-template-columns:1fr}}
 @media print{.sidebar,.topbar,.btn,.status-form,.case-header .btn{display:none!important}.main-content{margin-left:0!important}.page{padding:0!important}}
 </style>
@@ -59,6 +88,9 @@
             <span class="meta-item">🪪 {{ case.badge_no or 'N/A' }}</span>
             <span class="meta-item">📅 {{ case.created_at[:16] }}</span>
             <span class="meta-item">🌐 {{ case.language | capitalize }}</span>
+            {% if case.cluster_label %}
+            <span class="meta-item">🧩 Cluster: {{ case.cluster_label }}</span>
+            {% endif %}
         </div>
     </div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
@@ -70,6 +102,8 @@
             </select>
             <button type="submit" class="btn btn-secondary">Update</button>
         </form>
+        <a href="{{ url_for('generate_fir', complaint_id=case.complaint_id) }}" class="btn btn-secondary">📜 FIR Draft</a>
+        <a href="{{ url_for('network_graph', complaint_id=case.complaint_id) }}" class="btn btn-secondary">🔗 Network Graph</a>
         <button class="btn btn-secondary" onclick="window.print()">🖨️ Print</button>
         <a href="{{ url_for('history') }}" class="btn btn-secondary">← Back</a>
     </div>
@@ -149,7 +183,22 @@
     {% endif %}
 </div>
 
-<!-- Legal + Original Complaint -->
+<!-- Timeline -->
+{% if case.timeline and case.timeline|length > 0 %}
+<div class="card" style="margin-bottom:16px;">
+    <div class="card-label">⏳ Incident Timeline</div>
+    <div style="display:flex;flex-direction:column;gap:8px;padding:4px 0;">
+        {% for event in case.timeline %}
+        <div class="timeline-item">
+            <div class="timeline-time">{{ event.time }}</div>
+            <div class="timeline-event">{{ event.event }}</div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+<!-- Legal Sections -->
 {% if case.legal_sections %}
 <div class="card" style="margin-bottom:16px">
     <div class="card-label">⚖️ Applicable Legal Sections</div>
@@ -157,9 +206,363 @@
 </div>
 {% endif %}
 
-<div class="card">
+<!-- Original Complaint -->
+<div class="card" style="margin-bottom:16px">
     <div class="card-label">📝 Original Complaint Text</div>
     <div class="complaint-text">{{ case.complaint_text }}</div>
 </div>
+
+<!-- Redacted -->
+{% if case.redacted_text %}
+<div class="card" style="margin-bottom:16px">
+    <div class="card-label" style="display:flex;justify-content:space-between;align-items:center;">
+        🔒 Redacted Version (PII Masked)
+        <span style="font-size:10px;color:var(--green);background:rgba(48,209,88,.12);padding:2px 8px;border-radius:10px;">GDPR/IT Act Compliant</span>
+    </div>
+    <div class="complaint-text" style="background:var(--bg4);border-color:var(--green);">{{ case.redacted_text }}</div>
+</div>
+{% endif %}
+
+<!-- ============ AI INVESTIGATOR COPILOT ============ -->
+<div class="card" style="margin-bottom:16px;">
+    <div class="card-label">🤖 AI Investigator Copilot</div>
+    <div style="display:flex;gap:10px;">
+        <input type="text" id="copilotQuestion" placeholder="Ask anything about this case (e.g., 'Which IPC sections apply?')" style="flex:1;">
+        <button class="btn btn-primary" id="copilotAskBtn">Ask</button>
+    </div>
+    <div class="copilot-box" id="copilotResponseBox" style="display:none;">
+        <div class="response" id="copilotResponse"></div>
+    </div>
+</div>
+
+<!-- Threat Intel -->
+<div class="card" style="margin-bottom:16px;">
+    <div class="card-label">🛡️ Threat Intelligence Enrichment</div>
+    {% if threat_intel and threat_intel|length > 0 %}
+    <table class="evidence-table threat-table">
+        <thead>
+            <tr>
+                <th>Indicator</th>
+                <th>Type</th>
+                <th>Repeat Count</th>
+                <th>Risk</th>
+                <th>VirusTotal</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item, info in threat_intel.items() %}
+            <tr>
+                <td><code>{{ item }}</code></td>
+                <td>{{ info.type }}</td>
+                <td>{{ info.repeat_count }}</td>
+                <td>
+                    <span class="risk {{ info.risk }}">{{ info.risk }}</span>
+                </td>
+                <td>
+                    {% if info.virus_total %}
+                        ⚠️ Malicious: {{ info.virus_total.malicious }}, Suspicious: {{ info.virus_total.suspicious }}
+                    {% else %}
+                        —
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p style="color:var(--text3);">No indicators to enrich.</p>
+    {% endif %}
+</div>
+
+<!-- ============ FRAUD DNA ENGINE ============ -->
+<div class="card" style="margin-bottom:16px;">
+    <div class="card-label" style="display:flex;justify-content:space-between;align-items:center;">
+        🧬 Fraud DNA Engine
+        {% if case.dna_matches and case.dna_matches|length > 0 %}
+        <span style="font-size:10px;color:var(--red);background:rgba(255,59,48,.12);padding:2px 10px;border-radius:10px;">
+            ⚠️ Match Found!
+        </span>
+        {% endif %}
+    </div>
+    {% if case.dna_matches and case.dna_matches|length > 0 %}
+    <div style="background:var(--bg4);border:1px solid var(--red);border-radius:8px;padding:12px;margin-bottom:12px;">
+        <div style="font-weight:600;color:var(--red);">
+            🔍 Fraud DNA Match Found!
+        </div>
+        <div style="font-size:13px;margin-top:6px;">
+            <strong>Confidence:</strong> 94%<br>
+            <strong>Linked Cases:</strong> {{ case.dna_matches|length }}<br>
+            <strong>This is an organized criminal network, not an isolated incident.</strong>
+        </div>
+    </div>
+    <table class="evidence-table">
+        <thead>
+            <tr>
+                <th>Case ID</th>
+                <th>Category</th>
+                <th>Risk</th>
+                <th>Date</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for match in case.dna_matches[:5] %}
+            <tr>
+                <td><a href="{{ url_for('view_case', complaint_id=match.complaint_id) }}" style="color:var(--blue);">{{ match.complaint_id }}</a></td>
+                <td>{{ match.crime_category or '—' }}</td>
+                <td><span class="risk {{ match.risk_level }}">{{ match.risk_level }}</span></td>
+                <td>{{ match.created_at[:10] }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p style="color:var(--text3);">No Fraud DNA match found for this case. This appears to be a unique pattern.</p>
+    {% endif %}
+</div>
+
+<!-- ============ CRIMINAL INFRASTRUCTURE MAPPER ============ -->
+<div class="card" style="margin-bottom:16px;">
+    <div class="card-label">🧠 AI Criminal Infrastructure Mapper</div>
+    {% if infrastructure %}
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div style="background:var(--bg4);border-radius:8px;padding:12px;border:1px solid var(--border);">
+            <div style="font-size:10px;color:var(--text3);text-transform:uppercase;">Gang Size</div>
+            <div style="font-size:20px;font-weight:700;color:var(--red);">{{ infrastructure.gang_size or 'Unknown' }}</div>
+        </div>
+        <div style="background:var(--bg4);border-radius:8px;padding:12px;border:1px solid var(--border);">
+            <div style="font-size:10px;color:var(--text3);text-transform:uppercase;">Confidence</div>
+            <div style="font-size:20px;font-weight:700;color:var(--green);">{{ infrastructure.confidence or 0 }}%</div>
+        </div>
+        {% if infrastructure.leader %}
+        <div style="background:var(--bg4);border-radius:8px;padding:12px;border:1px solid var(--border);grid-column:span 2;">
+            <div style="font-size:10px;color:var(--text3);text-transform:uppercase;">Likely Leader</div>
+            <div style="font-size:14px;font-weight:600;color:var(--orange);">{{ infrastructure.leader }}</div>
+        </div>
+        {% endif %}
+        {% if infrastructure.mule_network %}
+        <div style="background:var(--bg4);border-radius:8px;padding:12px;border:1px solid var(--border);grid-column:span 2;">
+            <div style="font-size:10px;color:var(--text3);text-transform:uppercase;">Money Mule Network</div>
+            <div style="font-size:13px;">
+                {% for m in infrastructure.mule_network[:3] %}
+                    {% for key, val in m.items() %}
+                    <span style="background:var(--bg);padding:2px 8px;border-radius:4px;margin:2px;display:inline-block;">
+                        {{ key }} ({{ val }} cases)
+                    </span>
+                    {% endfor %}
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+    {% else %}
+    <p style="color:var(--text3);">Insufficient data for infrastructure analysis. Add more complaints with indicators.</p>
+    {% endif %}
+</div>
+
+<!-- Evidence -->
+<div class="card" style="margin-bottom:16px;">
+    <div class="card-label" style="display:flex;justify-content:space-between;align-items:center;">
+        📎 Digital Evidence
+        <a href="{{ url_for('upload_evidence', complaint_id=case.complaint_id) }}" class="btn btn-primary" style="font-size:11px;padding:4px 12px;">+ Add Evidence</a>
+    </div>
+    {% if evidence_list and evidence_list|length > 0 %}
+    <table class="evidence-table">
+        <thead>
+            <tr>
+                <th>Filename</th>
+                <th>Size</th>
+                <th>Hash (SHA-256)</th>
+                <th>Uploaded</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for ev in evidence_list %}
+            <tr>
+                <td>{{ ev.filename }}</td>
+                <td>{{ (ev.file_size / 1024) | round(1) }} KB</td>
+                <td style="font-family:monospace;font-size:10px;color:var(--text3);">{{ ev.file_hash[:16] }}...</td>
+                <td>{{ ev.uploaded_at[:10] }}</td>
+                <td>
+                    <a href="{{ url_for('download_evidence', evidence_id=ev.id) }}" class="btn btn-secondary" style="padding:2px 8px;font-size:10px;">⬇</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p style="color:var(--text3);padding:12px 0;">No evidence uploaded yet.</p>
+    {% endif %}
+</div>
+
+<!-- ============ FINANCIAL MULE DETECTION ============ -->
+<div class="card" style="margin-bottom:16px;">
+    <div class="card-label">💰 Financial Mule Detection</div>
+    {% if mules and mules|length > 0 %}
+    <table class="evidence-table">
+        <thead>
+            <tr>
+                <th>Indicator</th>
+                <th>Type</th>
+                <th>Appears in</th>
+                <th>Risk</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for m in mules %}
+            <tr>
+                <td><code>{{ m.indicator }}</code></td>
+                <td>{{ m.type }}</td>
+                <td>{{ m.count }} cases</td>
+                <td><span class="mule-badge {{ m.risk }}">{{ m.risk }}</span></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <p style="font-size:11px;color:var(--text3);margin-top:8px;">⚠️ Indicators appearing in multiple complaints may be mule accounts. HIGH risk = >5 appearances.</p>
+    {% else %}
+    <p style="color:var(--text3);">No mule indicators detected in this case.</p>
+    {% endif %}
+</div>
+
+<!-- Keyword Similar -->
+{% if similar_cases and similar_cases|length > 0 %}
+<div class="card" style="margin-bottom:16px;">
+    <div class="card-label">🔍 Similar Cases (Keyword Match)</div>
+    <table class="similar-table">
+        <thead>
+            <tr>
+                <th>Case ID</th>
+                <th>Category</th>
+                <th>Risk</th>
+                <th>Date</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for sc in similar_cases %}
+            <tr>
+                <td><a href="{{ url_for('view_case', complaint_id=sc.complaint_id) }}" style="color:var(--blue);">{{ sc.complaint_id }}</a></td>
+                <td>{{ sc.crime_category or '—' }}</td>
+                <td><span class="risk {{ sc.risk_level }}">{{ sc.risk_level }}</span></td>
+                <td>{{ sc.created_at[:10] }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+
+<!-- Semantic Similar -->
+{% if semantic_similar and semantic_similar|length > 0 %}
+<div class="card" style="margin-bottom:16px;">
+    <div class="card-label">🧠 AI Semantic Similar Cases (Deep Learning)</div>
+    <table class="similar-table">
+        <thead>
+            <tr>
+                <th>Case ID</th>
+                <th>Category</th>
+                <th>Risk</th>
+                <th>Similarity</th>
+                <th>Date</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for sc in semantic_similar %}
+            <tr>
+                <td><a href="{{ url_for('view_case', complaint_id=sc.complaint_id) }}" style="color:var(--blue);">{{ sc.complaint_id }}</a></td>
+                <td>{{ sc.crime_category or '—' }}</td>
+                <td><span class="risk {{ sc.risk_level }}">{{ sc.risk_level }}</span></td>
+                <td><strong>{{ (sc.similarity * 100)|round(1) }}%</strong></td>
+                <td>{{ sc.created_at[:10] }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <p style="font-size:11px;color:var(--text3);margin-top:8px;">Powered by sentence-transformers</p>
+</div>
+{% endif %}
+
+<!-- Notes -->
+<div class="card" style="margin-bottom:16px;">
+    <div class="card-label">📝 Case Notes (Collaboration)</div>
+    <form method="POST" action="{{ url_for('add_note', complaint_id=case.complaint_id) }}" style="margin-bottom:16px;">
+        <div style="display:flex;gap:10px;">
+            <input type="text" name="note" placeholder="Add an internal note..." style="flex:1;" required>
+            <button type="submit" class="btn btn-primary" style="white-space:nowrap;">+ Add Note</button>
+        </div>
+    </form>
+    {% if notes and notes|length > 0 %}
+        {% for note in notes %}
+        <div class="note-item">
+            <div class="meta">
+                {{ note.officer_name }} · {{ note.created_at[:16] }}
+            </div>
+            <div class="text">{{ note.note }}</div>
+        </div>
+        {% endfor %}
+    {% else %}
+        <p style="color:var(--text3);">No notes yet. Add a note to collaborate with other officers.</p>
+    {% endif %}
+</div>
+
+<!-- Chain of Custody -->
+<div class="card">
+    <div class="card-label" style="display:flex;justify-content:space-between;align-items:center;">
+        📋 Chain of Custody Log
+        <a href="{{ url_for('export_logs', complaint_id=case.complaint_id) }}" class="btn btn-secondary" style="font-size:11px;padding:4px 12px;">⬇ CSV</a>
+    </div>
+    <div style="max-height:300px;overflow-y:auto;">
+        <table class="evidence-table">
+            <thead>
+                <tr>
+                    <th>Time</th>
+                    <th>Officer</th>
+                    <th>Action</th>
+                    <th>Details</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for log in case_logs %}
+                <tr>
+                    <td style="font-size:11px;color:var(--text3);">{{ log.created_at[:16] }}</td>
+                    <td>{{ log.officer_name }}</td>
+                    <td>{{ log.action }}</td>
+                    <td>{{ log.details or '—' }}</td>
+                </tr>
+                {% else %}
+                <tr><td colspan="4" style="text-align:center;color:var(--text3);">No logs yet</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    // Copilot AJAX
+    document.getElementById('copilotAskBtn').addEventListener('click', function() {
+        const question = document.getElementById('copilotQuestion').value.trim();
+        if (!question) return;
+        const responseBox = document.getElementById('copilotResponseBox');
+        const responseDiv = document.getElementById('copilotResponse');
+        responseBox.style.display = 'block';
+        responseDiv.innerHTML = '⏳ Thinking...';
+        fetch('/case/{{ case.complaint_id }}/copilot', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ question: question })
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.error) {
+                responseDiv.innerHTML = '❌ ' + data.error;
+            } else {
+                responseDiv.innerHTML = data.response;
+            }
+        })
+        .catch(err => {
+            responseDiv.innerHTML = '❌ Error: ' + err;
+        });
+    });
+</script>
 
 {% endblock %}

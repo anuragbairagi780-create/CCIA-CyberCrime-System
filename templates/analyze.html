@@ -1,8 +1,11 @@
 {% extends "base.html" %}
+
 {% block title %}Analyze Complaint{% endblock %}
+
 {% block page_title %}Analyze Complaint{% endblock %}
 
 {% block extra_style %}
+
 <style>
 .form-card { background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:24px;margin-bottom:20px; }
 .form-label { font-size:11px;font-family:'Share Tech Mono',monospace;color:var(--text2);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:8px;display:flex;align-items:center;gap:6px; }
@@ -71,9 +74,21 @@ textarea::placeholder { color:var(--text3); }
 <div class="form-card">
     <div class="form-label">Enter Complaint</div>
     <form method="POST" id="cForm" onsubmit="showLoading()">
-        <textarea name="complaint" placeholder="Complaint yahan paste karo / Paste the complaint here...
+        <div style="display:flex; gap:10px; align-items:flex-start;">
+            <div style="flex:1;">
+                <textarea name="complaint" id="complaintText" placeholder="Complaint yahan paste karo / Paste the complaint here...
 
 Example: Victim received a call from 9876543210 claiming to be SBI bank officer. Caller asked for OTP. Victim shared OTP and Rs.45,000 was debited. Money sent to UPI ID fraud@paytm">{{ complaint }}</textarea>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:6px; padding-top:4px;">
+                <button type="button" id="voiceBtn" class="btn btn-secondary" style="padding:10px 14px; font-size:20px;" title="Voice input">
+                    🎙️
+                </button>
+                <button type="button" id="stopBtn" class="btn btn-danger" style="padding:10px 14px; font-size:14px; display:none;" title="Stop recording">
+                    ⏹️
+                </button>
+            </div>
+        </div>
         <div class="form-row">
             <select name="language" class="lang-select">
                 <option value="english" {% if language=='english' %}selected{% endif %}>🇬🇧 English</option>
@@ -86,10 +101,12 @@ Example: Victim received a call from 9876543210 claiming to be SBI bank officer.
     </form>
 </div>
 
+<!-- Error messages -->
 {% if error %}
 <div class="error-box">⚠️ {{ error }}</div>
 {% endif %}
 
+<!-- Saved ID & download link -->
 {% if saved_id %}
 <div style="margin-top:15px;">
     <a href="/download/{{ saved_id }}">
@@ -99,115 +116,176 @@ Example: Victim received a call from 9876543210 claiming to be SBI bank officer.
 <div class="success-box">✅ Case saved as <strong>{{ saved_id }}</strong> — <a href="{{ url_for('view_case', complaint_id=saved_id) }}" style="color:var(--green);">View Case →</a></div>
 {% endif %}
 
-{% if result %}
-<div class="results-header">
-    <span class="results-title">Investigation Report</span>
-    <div class="results-line"></div>
-    <button class="print-btn" onclick="window.print()">🖨️ Print</button>
-</div>
-
-<!-- Priority -->
-{% if result.priority_action %}
-<div class="priority-box">
-    <div style="font-size:20px;flex-shrink:0">⚡</div>
-    <div>
-        <div class="priority-label">Immediate Priority Action</div>
-        <div class="priority-text">{{ result.priority_action }}</div>
-    </div>
-</div>
+<!-- Repeat alert -->
+{% if result and result.repeat_alert %}
+<div class="error-box">⚠️ {{ result.repeat_alert }}</div>
 {% endif %}
 
-<!-- Summary + Risk -->
-<div class="grid2">
+<!-- Main analysis results -->
+{% if result %}
+
+    <!-- Basic info -->
     <div class="card">
-        <div class="card-label">Case Summary</div>
-        <div style="font-size:13px;line-height:1.6;">{{ result.case_summary }}</div>
+        <h3>{{ result.crime_category }}</h3>
+        <p>{{ result.risk_level }}</p>
     </div>
-    <div class="card">
-        <div class="card-label">Crime Classification</div>
-        <div style="margin-bottom:14px;"><span class="cat-tag">🏷️ {{ result.crime_category }}</span></div>
-        <div class="card-label">Risk Level</div>
-        <span class="risk-badge {{ result.risk_level }}"><span class="rdot"></span>{{ result.risk_level }}</span>
-        {% if result.risk_reason %}
-        <div style="margin-top:8px;font-size:12px;color:var(--text2);">{{ result.risk_reason }}</div>
+
+    <!-- Priority Action -->
+    {% if result.priority_action %}
+    <div class="priority-box">
+        <div style="font-size:20px;flex-shrink:0">⚡</div>
+        <div>
+            <div class="priority-label">Immediate Priority Action</div>
+            <div class="priority-text">{{ result.priority_action }}</div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Summary + Risk (detailed) -->
+    <div class="grid2">
+        <div class="card">
+            <div class="card-label">Case Summary</div>
+            <div style="font-size:13px;line-height:1.6;">{{ result.case_summary }}</div>
+        </div>
+        <div class="card">
+            <div class="card-label">Crime Classification</div>
+            <div style="margin-bottom:14px;"><span class="cat-tag">🏷️ {{ result.crime_category }}</span></div>
+            <div class="card-label">Risk Level</div>
+            <span class="risk-badge {{ result.risk_level }}"><span class="rdot"></span>{{ result.risk_level }}</span>
+            {% if result.risk_reason %}
+            <div style="margin-top:8px;font-size:12px;color:var(--text2);">{{ result.risk_reason }}</div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Auto-Extracted Indicators -->
+    {% if indicators %}
+    <div class="results-header" style="margin-bottom:10px;">
+        <span class="results-title" style="color:var(--orange);">Auto-Extracted Indicators</span>
+        <div class="results-line"></div>
+    </div>
+    <div class="indicators-grid">
+        {% if indicators.mobile_numbers %}
+        <div class="ind-card">
+            <div class="ind-type">📱 Mobile Numbers</div>
+            {% for n in indicators.mobile_numbers %}<span class="ind-chip">{{ n }}</span>{% endfor %}
+        </div>
+        {% endif %}
+        {% if indicators.email_ids %}
+        <div class="ind-card">
+            <div class="ind-type">📧 Email IDs</div>
+            {% for e in indicators.email_ids %}<span class="ind-chip">{{ e }}</span>{% endfor %}
+        </div>
+        {% endif %}
+        {% if indicators.urls %}
+        <div class="ind-card">
+            <div class="ind-type">🔗 URLs</div>
+            {% for u in indicators.urls %}<span class="ind-chip">{{ u[:38] }}{% if u|length>38 %}...{% endif %}</span>{% endfor %}
+        </div>
+        {% endif %}
+        {% if indicators.upi_ids %}
+        <div class="ind-card">
+            <div class="ind-type">💳 UPI IDs</div>
+            {% for u in indicators.upi_ids %}<span class="ind-chip">{{ u }}</span>{% endfor %}
+        </div>
+        {% endif %}
+        {% if indicators.possible_account_numbers %}
+        <div class="ind-card">
+            <div class="ind-type">🏦 Account Numbers</div>
+            {% for a in indicators.possible_account_numbers %}<span class="ind-chip">{{ a }}</span>{% endfor %}
+        </div>
         {% endif %}
     </div>
-</div>
+    {% endif %}
 
-<!-- Auto-Extracted Indicators -->
-{% if indicators %}
-<div class="results-header" style="margin-bottom:10px;">
-    <span class="results-title" style="color:var(--orange);">Auto-Extracted Indicators</span>
-    <div class="results-line"></div>
-</div>
-<div class="indicators-grid">
-    {% if indicators.mobile_numbers %}
-    <div class="ind-card">
-        <div class="ind-type">📱 Mobile Numbers</div>
-        {% for n in indicators.mobile_numbers %}<span class="ind-chip">{{ n }}</span>{% endfor %}
-    </div>
-    {% endif %}
-    {% if indicators.email_ids %}
-    <div class="ind-card">
-        <div class="ind-type">📧 Email IDs</div>
-        {% for e in indicators.email_ids %}<span class="ind-chip">{{ e }}</span>{% endfor %}
-    </div>
-    {% endif %}
-    {% if indicators.urls %}
-    <div class="ind-card">
-        <div class="ind-type">🔗 URLs</div>
-        {% for u in indicators.urls %}<span class="ind-chip">{{ u[:38] }}{% if u|length>38 %}...{% endif %}</span>{% endfor %}
-    </div>
-    {% endif %}
-    {% if indicators.upi_ids %}
-    <div class="ind-card">
-        <div class="ind-type">💳 UPI IDs</div>
-        {% for u in indicators.upi_ids %}<span class="ind-chip">{{ u }}</span>{% endfor %}
-    </div>
-    {% endif %}
-    {% if indicators.possible_account_numbers %}
-    <div class="ind-card">
-        <div class="ind-type">🏦 Account Numbers</div>
-        {% for a in indicators.possible_account_numbers %}<span class="ind-chip">{{ a }}</span>{% endfor %}
-    </div>
-    {% endif %}
-</div>
-{% endif %}
-
-<!-- AI Indicators + Steps -->
-<div class="grid2">
-    {% if result.key_indicators %}
-    <div class="card">
-        <div class="card-label">🔎 Key Indicators (AI)</div>
-        <div class="ind-list">
-            {% for item in result.key_indicators %}
-            <div class="ind-item">{{ item }}</div>
-            {% endfor %}
-        </div>
-    </div>
-    {% endif %}
-    {% if result.investigation_steps %}
-    <div class="card">
-        <div class="card-label">📋 Investigation Steps</div>
-        <div class="steps-list">
-            {% for step in result.investigation_steps %}
-            <div class="step-item">
-                <span class="step-num">{{ loop.index }}</span>
-                <span class="step-text">{{ step }}</span>
+    <!-- AI Indicators + Investigation Steps -->
+    <div class="grid2">
+        {% if result.key_indicators %}
+        <div class="card">
+            <div class="card-label">🔎 Key Indicators (AI)</div>
+            <div class="ind-list">
+                {% for item in result.key_indicators %}
+                <div class="ind-item">{{ item }}</div>
+                {% endfor %}
             </div>
-            {% endfor %}
         </div>
+        {% endif %}
+        {% if result.investigation_steps %}
+        <div class="card">
+            <div class="card-label">📋 Investigation Steps</div>
+            <div class="steps-list">
+                {% for step in result.investigation_steps %}
+                <div class="step-item">
+                    <span class="step-num">{{ loop.index }}</span>
+                    <span class="step-text">{{ step }}</span>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Legal Sections -->
+    {% if result.legal_sections %}
+    <div class="card">
+        <div class="card-label">⚖️ Applicable Legal Sections</div>
+        <div style="font-size:13px;line-height:1.6;">{{ result.legal_sections }}</div>
     </div>
     {% endif %}
-</div>
 
-<!-- Legal -->
-{% if result.legal_sections %}
-<div class="card">
-    <div class="card-label">⚖️ Applicable Legal Sections</div>
-    <div style="font-size:13px;line-height:1.6;">{{ result.legal_sections }}</div>
-</div>
-{% endif %}
+{% endif %}  <!-- end if result -->
 
-{% endif %}
+{% endblock %}
+
+{% block extra_script %}
+<script>
+(function() {
+    const textarea = document.getElementById('complaintText');
+    const voiceBtn = document.getElementById('voiceBtn');
+    const stopBtn = document.getElementById('stopBtn');
+    let recognition = null;
+
+    if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+        voiceBtn.style.display = 'none';
+        return;
+    }
+
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    recognition = new SpeechRecognition();
+    recognition.lang = 'hi-IN';
+    recognition.continuous = true;
+    recognition.interimResults = true;
+
+    recognition.onstart = function() {
+        voiceBtn.style.display = 'none';
+        stopBtn.style.display = 'block';
+    };
+
+    recognition.onend = function() {
+        voiceBtn.style.display = 'block';
+        stopBtn.style.display = 'none';
+    };
+
+    recognition.onresult = function(event) {
+        let finalText = '';
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+            if (event.results[i].isFinal) {
+                finalText += event.results[i][0].transcript;
+            }
+        }
+        if (finalText) {
+            textarea.value = textarea.value + ' ' + finalText;
+        }
+    };
+
+    voiceBtn.addEventListener('click', function() {
+        recognition.start();
+    });
+
+    stopBtn.addEventListener('click', function() {
+        recognition.stop();
+    });
+
+})();
+</script>
 {% endblock %}

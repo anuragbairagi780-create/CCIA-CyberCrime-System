@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+{% block title %}Crime Heatmap{% endblock %}
+{% block page_title %}Crime Heatmap Dashboard{% endblock %}
+
+{% block extra_style %}
+<style>
+    #map { height: 600px; border-radius: 12px; border: 1px solid var(--border); }
+    .stats-row { display: flex; gap: 20px; margin-bottom: 20px; flex-wrap: wrap; }
+    .stat-card-sm { background: var(--bg3); padding: 15px 25px; border-radius: 10px; border: 1px solid var(--border); }
+    .stat-card-sm .num { font-size: 28px; font-weight: 700; color: var(--blue); }
+    .stat-card-sm .label { font-size: 12px; color: var(--text3); }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="stats-row">
+    <div class="stat-card-sm">
+        <div class="num" id="totalCities">0</div>
+        <div class="label">Cities Affected</div>
+    </div>
+    <div class="stat-card-sm">
+        <div class="num" id="totalCases">0</div>
+        <div class="label">Total Cases Mapped</div>
+    </div>
+    <div class="stat-card-sm">
+        <div class="num" id="topCity">-</div>
+        <div class="label">Top Affected City</div>
+    </div>
+</div>
+
+<div id="map"></div>
+
+<script>
+    // Load Leaflet CSS & JS
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+    document.head.appendChild(link);
+
+    const script = document.createElement('script');
+    script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+    script.onload = function() {
+        // Coordinates for Indian cities
+        const cityCoords = {
+            'Lucknow': [26.8467, 80.9462],
+            'Delhi': [28.7041, 77.1025],
+            'Mumbai': [19.0760, 72.8777],
+            'Bangalore': [12.9716, 77.5946],
+            'Jaipur': [26.9124, 75.7873],
+            'Kota': [25.2138, 75.8648],
+            'Ajmer': [26.4499, 74.6399],
+            'Noida': [28.5355, 77.3910],
+            'Ghaziabad': [28.6692, 77.4538],
+            'Agra': [27.1767, 78.0081],
+            'Varanasi': [25.3176, 82.9739],
+            'Allahabad': [25.4358, 81.8463]
+        };
+
+        fetch('/api/heatmap-data')
+            .then(r => r.json())
+            .then(data => {
+                const map = L.map('map').setView([23.0, 80.0], 5);
+
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '© OpenStreetMap contributors'
+                }).addTo(map);
+
+                let totalCases = 0;
+                let topCity = { name: '', count: 0 };
+
+                data.forEach(item => {
+                    const coords = cityCoords[item.city];
+                    if (coords) {
+                        const radius = Math.max(10, item.count * 5);
+                        L.circle(coords, {
+                            radius: radius * 1000,
+                            color: '#ff4444',
+                            fillColor: '#ff4444',
+                            fillOpacity: 0.4,
+                            weight: 2
+                        }).addTo(map)
+                        .bindPopup(`<b>${item.city}</b><br>Cases: ${item.count}`);
+
+                        totalCases += item.count;
+                        if (item.count > topCity.count) {
+                            topCity = item;
+                        }
+                    }
+                });
+
+                document.getElementById('totalCities').textContent = data.length;
+                document.getElementById('totalCases').textContent = totalCases;
+                document.getElementById('topCity').textContent = topCity.name || '-';
+            });
+    };
+    document.body.appendChild(script);
+</script>
+{% endblock %}

@@ -1,0 +1,144 @@
+{% extends "base.html" %}
+{% block title %}Cybercrime Command Center{% endblock %}
+{% block page_title %}🛸 Cybercrime Command Center{% endblock %}
+
+{% block extra_style %}
+<style>
+    #commandMap { height: 500px; border-radius: 12px; border: 1px solid var(--border); }
+    .stats-row { display: flex; gap: 20px; margin-bottom: 20px; flex-wrap: wrap; }
+    .stat-card-sm { background: var(--bg3); padding: 15px 25px; border-radius: 10px; border: 1px solid var(--border); }
+    .stat-card-sm .num { font-size: 28px; font-weight: 700; color: var(--red); }
+    .stat-card-sm .label { font-size: 12px; color: var(--text3); }
+    .live-feed { max-height: 300px; overflow-y: auto; }
+    .feed-item { padding: 8px 12px; border-bottom: 1px solid var(--border); font-size: 13px; }
+    .feed-item .time { color: var(--text3); font-size: 11px; }
+    .campaign-badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px; background: rgba(255,59,48,.12); color: var(--red); border: 1px solid rgba(255,59,48,.3); }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="stats-row">
+    <div class="stat-card-sm">
+        <div class="num" id="totalStates">0</div>
+        <div class="label">States Affected</div>
+    </div>
+    <div class="stat-card-sm">
+        <div class="num" id="activeCampaigns">0</div>
+        <div class="label">Active Campaigns</div>
+    </div>
+    <div class="stat-card-sm">
+        <div class="num" id="recentCases">0</div>
+        <div class="label">Recent Cases (24hrs)</div>
+    </div>
+</div>
+
+<div id="commandMap"></div>
+
+<div class="grid2" style="margin-top:16px;">
+    <div class="card">
+        <div class="card-label">📡 Live Intelligence Feed</div>
+        <div class="live-feed" id="liveFeed">
+            <p style="color:var(--text3);">Loading...</p>
+        </div>
+    </div>
+    <div class="card">
+        <div class="card-label">🔥 Active Scam Campaigns</div>
+        <div id="campaignList">
+            <p style="color:var(--text3);">Loading...</p>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Load Leaflet
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+    document.head.appendChild(link);
+
+    const script = document.createElement('script');
+    script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+    script.onload = function() {
+        const map = L.map('commandMap').setView([23.0, 80.0], 5);
+        
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(map);
+        
+        // Indian states with coordinates
+        const stateCoords = {
+            'Uttar Pradesh': [26.8467, 80.9462],
+            'Maharashtra': [19.0760, 72.8777],
+            'Delhi': [28.7041, 77.1025],
+            'Rajasthan': [26.9124, 75.7873],
+            'Bihar': [25.0961, 85.3131],
+            'West Bengal': [22.5726, 88.3639],
+            'Tamil Nadu': [11.1271, 78.6569],
+            'Karnataka': [15.3173, 75.7139]
+        };
+        
+        fetch('/api/command-center-data')
+            .then(r => r.json())
+            .then(data => {
+                // Update stats
+                document.getElementById('totalStates').textContent = Object.keys(data.state_data).length;
+                document.getElementById('activeCampaigns').textContent = data.clusters.length;
+                document.getElementById('recentCases').textContent = data.latest.length;
+                
+                // Add circles to map
+                let totalCases = 0;
+                for (const [state, count] of Object.entries(data.state_data)) {
+                    const coords = stateCoords[state];
+                    if (coords) {
+                        const radius = Math.max(10, count * 5);
+                        L.circle(coords, {
+                            radius: radius * 1000,
+                            color: '#ff4444',
+                            fillColor: '#ff4444',
+                            fillOpacity: 0.4,
+                            weight: 2
+                        }).addTo(map)
+                        .bindPopup(`<b>${state}</b><br>Cases: ${count}`);
+                        totalCases += count;
+                    }
+                }
+                
+                // Live feed
+                const feed = document.getElementById('liveFeed');
+                feed.innerHTML = '';
+                data.latest.slice(0, 8).forEach(c => {
+                    const div = document.createElement('div');
+                    div.className = 'feed-item';
+                    div.innerHTML = `
+                        <span style="font-weight:500;">${c.complaint_id}</span>
+                        <span class="risk ${c.risk_level}">${c.risk_level}</span>
+                        <span style="color:var(--text3);font-size:11px;margin-left:8px;">${c.crime_category || 'Unknown'}</span>
+                        <span class="time" style="float:right;">${c.created_at.slice(0,16)}</span>
+                    `;
+                    feed.appendChild(div);
+                });
+                
+                // Campaigns
+                const campaignList = document.getElementById('campaignList');
+                campaignList.innerHTML = '';
+                if (data.clusters.length > 0) {
+                    data.clusters.forEach(c => {
+                        const div = document.createElement('div');
+                        div.style.cssText = 'padding:8px 0;border-bottom:1px solid var(--border);';
+                        div.innerHTML = `
+                            <span class="campaign-badge">🔥 Active</span>
+                            <span style="font-weight:500;margin-left:8px;">Cluster ${c.cluster_label}</span>
+                            <span style="float:right;color:var(--text3);">${c.count} cases</span>
+                        `;
+                        campaignList.appendChild(div);
+                    });
+                } else {
+                    campaignList.innerHTML = '<p style="color:var(--text3);">No active campaigns detected.</p>';
+                }
+            });
+    };
+    document.body.appendChild(script);
+</script>
+
+{% endblock %}

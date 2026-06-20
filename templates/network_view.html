@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}Network Graph - {{ complaint_id }}{% endblock %}
+{% block page_title %}Suspect Network - {{ complaint_id }}{% endblock %}
+
+{% block content %}
+<div style="margin-bottom: 16px;">
+    <a href="{{ url_for('view_case', complaint_id=complaint_id) }}" class="btn btn-secondary">← Back to Case</a>
+</div>
+<div style="background: var(--bg3); border-radius: 12px; padding: 0; overflow: hidden; border: 1px solid var(--border);">
+    {{ network_html|safe }}
+</div>
+{% endblock %}

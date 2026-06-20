@@ -4,6 +4,8 @@
 
 {% block extra_style %}
 <style>
+/* NOTE: keep Jinja out of CSS. Only static CSS here. */
+
 .stats-grid { display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px; }
 .stat-card { background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:20px;position:relative;overflow:hidden; }
 .stat-card::before { content:'';position:absolute;top:0;right:0;width:60px;height:60px;border-radius:0 12px 0 60px;opacity:.08; }
@@ -37,6 +39,12 @@
 .cat-count { font-family:'Share Tech Mono',monospace;font-size:12px;color:var(--text2);min-width:24px;text-align:right; }
 
 .empty-msg { text-align:center;padding:32px;color:var(--text3);font-size:13px; }
+
+/* Cluster styles */
+.cluster-grid { display:flex;flex-wrap:wrap;gap:16px;padding:8px 0; }
+.cluster-item { background:var(--bg4);border:1px solid var(--border);border-radius:8px;padding:12px 20px;text-align:center;min-width:100px;flex:1 0 auto; }
+.cluster-item .count { font-size:24px;font-weight:700;color:var(--blue); }
+.cluster-item .label { font-size:12px;color:var(--text3);font-family:'Share Tech Mono',monospace; }
 
 @media (max-width: 900px) { .stats-grid { grid-template-columns: repeat(2, 1fr); } .grid2 { grid-template-columns: 1fr; } }
 </style>
@@ -79,6 +87,7 @@
     {% if session.role == 'admin' %}
     <a href="{{ url_for('manage_officers') }}" class="btn btn-secondary">👮 Manage Officers</a>
     {% endif %}
+    <a href="{{ url_for('global_network') }}" class="btn btn-secondary">🌐 Global Threat Graph</a>
 </div>
 
 <div class="grid2">
@@ -116,7 +125,7 @@
             <div class="cat-item">
                 <div class="cat-name">{{ cat.crime_category or 'Unknown' }}</div>
                 <div class="cat-bar-wrap">
-                    <div class="cat-bar" style="width:{{ (cat.count / max_count * 100)|int }}%"></div>
+                    <div class="cat-bar" style="width:{{ ((cat.count / max_count) * 100)|int if max_count else 0 }}%"></div>
                 </div>
                 <div class="cat-count">{{ cat.count }}</div>
             </div>
@@ -126,4 +135,21 @@
         {% endif %}
     </div>
 </div>
+
+<!-- ============ MODUS OPERANDI CLUSTERS ============ -->
+{% if cluster_labels and cluster_labels|length > 0 %}
+<div class="card" style="margin-top:16px;">
+    <div class="section-title">🧩 Modus Operandi Clusters (AI-Discovered Patterns)</div>
+    <div class="cluster-grid">
+        {% for i in range(cluster_labels|length) %}
+        <div class="cluster-item">
+            <div class="count">{{ cluster_counts[i] }}</div>
+            <div class="label">Cluster {{ cluster_labels[i] }}</div>
+        </div>
+        {% endfor %}
+    </div>
+    <p style="font-size:11px;color:var(--text3);margin-top:8px;">AI‑discovered fraud patterns using K‑Means clustering on complaint semantics</p>
+</div>
+{% endif %}
+
 {% endblock %}
