@@ -1,4 +1,12 @@
-flask==3.0.0
-python-dotenv==1.0.0
-gunicorn
+Flask
+requests
+python-dotenv
+sentence-transformers==2.2.2
+scikit-learn
+networkx
+pyvis
 pdfplumber
+faiss-cpu
+reportlab
+gunicorn
+torch==2.1.0
